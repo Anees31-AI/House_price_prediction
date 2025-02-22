@@ -5,6 +5,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error,mean_squared_error,r2_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
+
 
 # Load dataset
 df = pd.read_csv("Housing.csv")
@@ -119,3 +122,64 @@ print(f"\n Random Forest - Mean Absolute Erro:{mae_rf}")
 print(f"Random Forest - Mean Squared Error:{mse_rf}")
 print(f"Random Forest - Root Mean Squared Error:{rmse_rf}")
 print(f"Random Forest - R² Score:{r2_rf}")
+
+#Define parameter grid
+param_grid_dt={
+    "max_depth":[5,10,15,20],
+    "min_samples_split":[2,5,10],
+    "min_samples_leaf":[1,2,5]
+}
+
+#Initialize Decision Tree Regressor
+dt=DecisionTreeRegressor()
+
+#Perform Grid search
+grid_dt=GridSearchCV(dt,param_grid_dt, cv=5, scoring="r2", n_jobs=-1)
+grid_dt.fit(X_train,y_train)
+
+#Best parameters & Score
+print("Best parameters for decision tree:",grid_dt.best_params_)
+print("Best R² Score:",grid_dt.best_score_)
+
+#Train With best parameters
+best_dt=grid_dt.best_estimator_
+
+#Define parameter grid
+
+param_grid_rf={
+    "n_estimators":[50,100,200],
+    "max_depth":[10,20,30],
+    "min_samples_split":[2,5,10],
+    "min_samples_leaf":[1,2,5]
+}
+
+#Initialize  Random forest
+rf=RandomForestRegressor(random_state=42)
+
+#Perform Randomized Search
+random_search_rf=RandomizedSearchCV(rf, param_grid_rf, cv=5, scoring="r2", n_iter=10, n_jobs=-1,random_state=42)
+random_search_rf.fit(X_train,y_train)
+
+#Best parameter and score
+print("Best parameters for Random Forest:",random_search_rf.best_params_)
+print("Best  R² Score:",random_search_rf.best_score_)
+
+#Train with best Parameters
+best_rf=random_search_rf.best_estimator_
+
+#Predict with best models
+y_pred_best_dt=best_dt.predict(X_test)
+y_pred_best_rf=best_rf.predict(X_test)
+
+#Compute Metrices for Decision Tree
+
+mae_dt=mean_absolute_error(y_test,y_pred_best_dt)
+rmse_dt=mean_squared_error(y_test,y_pred_best_dt,squared=False)
+r2_dt=r2_score(y_test,y_pred_best_dt)
+
+#Compare Results
+print("\nOptimize Decision Tree Performance:")
+print(f"MAE:{mae_dt},RMSE:{rmse_dt},R² Score:{r2_dt}")
+
+print("\nOptimize Random Forest Performance:")
+print(f"MAE:{mae_rf},RMSE:{rmse_rf},R² Score:{r2_rf}")
